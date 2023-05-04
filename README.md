@@ -7,6 +7,14 @@
 [![GitHub Release](https://img.shields.io/github/release/golang-migrate/migrate.svg)](https://github.com/golang-migrate/migrate/releases)
 [![Go Report Card](https://goreportcard.com/badge/github.com/golang-migrate/migrate)](https://goreportcard.com/report/github.com/golang-migrate/migrate)
 
+# Difference from official repo (base on v4.15.2)
+
+* update mod
+  * update go version to 1.18
+  * force upgrade golang.org/x/text to v0.3.8 for security fixes
+* add new query for mysql
+  * x-isolation-level
+
 # migrate
 
 __Database migrations written in Go. Use as [CLI](#cli-usage) or import as [library](#use-in-your-go-project).__

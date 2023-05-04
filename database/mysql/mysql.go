@@ -41,6 +41,7 @@ type Config struct {
 	MigrationsTable string
 	DatabaseName    string
 	NoLock          bool
+	IsolationLevel  sql.IsolationLevel
 }
 
 type Mysql struct {
@@ -241,6 +242,26 @@ func (m *Mysql) Open(url string) (database.Driver, error) {
 		}
 	}
 
+	customIsolationLevel := sql.LevelSerializable
+	if xil := customParams["x-isolation-level"]; xil != "" {
+		isolationLevels := []sql.IsolationLevel{
+			sql.LevelDefault,
+			sql.LevelReadUncommitted,
+			sql.LevelReadCommitted,
+			sql.LevelWriteCommitted,
+			sql.LevelRepeatableRead,
+			sql.LevelSnapshot,
+			sql.LevelSerializable,
+		}
+
+		for _, il := range isolationLevels {
+			if strings.EqualFold(xil, il.String()) {
+				customIsolationLevel = il
+				break
+			}
+		}
+	}
+
 	db, err := sql.Open("mysql", config.FormatDSN())
 	if err != nil {
 		return nil, err
@@ -250,6 +271,7 @@ func (m *Mysql) Open(url string) (database.Driver, error) {
 		DatabaseName:    config.DBName,
 		MigrationsTable: customParams["x-migrations-table"],
 		NoLock:          noLock,
+		IsolationLevel: customIsolationLevel,
 	})
 	if err != nil {
 		return nil, err
@@ -336,7 +358,7 @@ func (m *Mysql) Run(migration io.Reader) error {
 }
 
 func (m *Mysql) SetVersion(version int, dirty bool) error {
-	tx, err := m.conn.BeginTx(context.Background(), &sql.TxOptions{Isolation: sql.LevelSerializable})
+	tx, err := m.conn.BeginTx(context.Background(), &sql.TxOptions{Isolation: m.config.IsolationLevel})
 	if err != nil {
 		return &database.Error{OrigErr: err, Err: "transaction start failed"}
 	}
